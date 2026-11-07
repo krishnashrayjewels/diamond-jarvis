@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e14">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Diamond Jarvis</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230b0e14'/%3E%3Cpolygon points='256,80 420,190 340,420 172,420 92,190' fill='%23e8b64c'/%3E%3Cpolygon points='256,80 92,190 256,420' fill='%23f5d78e'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#0b0e14;--card:#141a24;--line:#232c3d;--gold:#e8b64c;--gold2:#f5d78e;--txt:#e8ecf3;--mut:#8b96a8;--grn:#3ecf8e;--red:#ff6b6b}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,'Segoe UI',Roboto,'Noto Sans',sans-serif;font-size:15px;padding-bottom:76px}
+.hdr{position:sticky;top:0;background:linear-gradient(180deg,#0b0e14 80%,rgba(11,14,20,0));padding:14px 16px 10px;z-index:5}
+.hdr h1{font-size:19px;color:var(--gold);font-weight:700}
+.hdr .sub{color:var(--mut);font-size:12px;margin-top:2px}
+.wrap{padding:0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:14px;color:var(--gold2);margin-bottom:10px;font-weight:600}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);gap:8px}
+.row:last-child{border-bottom:0}
+.row .k{color:var(--mut);font-size:13px}
+.row .v{font-weight:600;text-align:right}
+.grn{color:var(--grn)}.red{color:var(--red)}
+input,select,textarea{width:100%;background:#0d1219;border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:10px 12px;font-size:15px;margin-top:4px;outline:none}
+input:focus,textarea:focus{border-color:var(--gold)}
+label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:block;width:100%;background:var(--gold);color:#0b0e14;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:700;margin-top:14px}
+.btn.sec{background:#1b2330;color:var(--gold2);border:1px solid var(--line)}
+.mic{width:78px;height:78px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#f5d78e,#c9922e);border:0;margin:14px auto;display:block;font-size:32px;box-shadow:0 6px 24px rgba(232,182,76,.35)}
+.mic.rec{animation:pulse 1s infinite;background:radial-gradient(circle at 30% 30%,#ff8a8a,#d33)}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;background:#10151f;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:9}
+.tabs button{flex:1;background:0;border:0;color:var(--mut);font-size:11px;padding:6px 0}
+.tabs button.on{color:var(--gold)}
+.tabs .ic{font-size:19px;display:block}
+.stat{flex:1;text-align:center}
+.stat .n{font-size:18px;font-weight:700}
+.stat .l{font-size:11px;color:var(--mut)}
+.badge{font-size:11px;border-radius:6px;padding:2px 7px}
+.b-sale{background:rgba(62,207,142,.15);color:var(--grn)}
+.b-lot{background:rgba(232,182,76,.15);color:var(--gold2)}
+.b-buy{background:rgba(120,160,255,.15);color:#8fb3ff}
+.b-upad{background:rgba(255,150,80,.15);color:#ffab70}
+.b-exp{background:rgba(255,107,107,.15);color:var(--red)}
+.hint{color:var(--mut);font-size:12px;margin-top:8px;line-height:1.5}
+.res{background:#0d1219;border:1px dashed #3a465c;border-radius:12px;padding:12px;margin-top:12px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:10px 18px;border-radius:999px;font-weight:600;z-index:99;display:none}
+#page{display:none}#page.on{display:block}
+</style>
+</head>
+<body>
+<div class="hdr"><h1>💎 Diamond Jarvis</h1><div class="sub" id="hdrsub">હિસાબ બોલો, જર્વિસ લખી દેશે</div></div>
+<div class="wrap">
+
+<!-- HOME -->
+<div id="page-home" class="on">
+  <div class="card"><h2>આ મહિનો</h2>
+    <div class="row" style="display:flex;gap:6px;border:0">
+      <div class="stat"><div class="n grn" id="h-sale">₹0</div><div class="l">વેચાણ</div></div>
+      <div class="stat"><div class="n" id="h-lot">0</div><div class="l">લોટ</div></div>
+      <div class="stat"><div class="n red" id="h-recv">₹0</div><div class="l">લેવાના</div></div>
+      <div class="stat"><div class="n" id="h-pay">₹0</div><div class="l">આપવાના</div></div>
+    </div>
+  </div>
+  <div class="card"><h2>આજની સલાહ (કેશ ફ્લો)</h2><div id="h-advice" class="hint">હજી કોઈ એન્ટ્રી નથી.</div></div>
+  <div class="card"><h2>EMI સિંકિંગ ફંડ</h2>
+    <div class="row"><span class="k">આ મહિનો ભરાયો</span><span class="v" id="h-emi">₹0</span></div>
+    <div class="row"><span class="k">ટારગેટ (₹7,00,000)</span><span class="v">₹7,00,000</span></div>
+    <div class="hint" id="h-emipcs">35,000 પીસ જરૂરી (₹20/પીસ)</div>
+  </div>
+  <div class="card"><h2>પાર્ટનર ઉપડ બેલેન્સ</h2><div id="h-upad"><div class="hint">-</div></div></div>
+</div>
+
+<!-- NEW -->
+<div id="page-new">
+  <div class="card">
+    <h2>બોલો કે લખો, એન્ટ્રી આપમેળે બનશે</h2>
+    <button class="mic" id="mic" title="બોલો">🎙️</button>
+    <div class="hint" style="text-align:center" id="micstat">બટન દબાવી હિંગ્લિશ/ગુજરાતીમાં બોલો</div>
+    <textarea id="rawtext" rows="4" placeholder="ઉદા: hi dost mene aaj 15 carat mal VF se liya 2500 per carat... kishor ne 11.18 tip likhi, 30 din mudat..."></textarea>
+    <div class="grid2">
+      <button class="btn sec" id="btn-parse">✨ પાર્સ કરો</button>
+      <button class="btn sec" id="btn-photo">📷 ચિટ્ઠી ફોટો</button>
+    </div>
+    <input type="file" id="photoinput" accept="image/*" capture="environment" style="display:none">
+  </div>
+  <div id="editcard" style="display:none">
+    <div class="card"><h2>એન્ટ્રી ચેક કરી સેવ કરો</h2><div id="editfields"></div><div id="calcbox" class="res"></div>
+      <button class="btn" id="btn-save">💾 સેવ કરો</button>
+      <div class="hint">સેવ પહેલાં આંકડા પોતાની આંખે વાંચી લેવા. AI ભૂલી શકે.</div>
+    </div>
+  </div>
+</div>
+
+<!-- LEDGER -->
+<div id="page-ledger">
+  <div class="card">
+    <select id="lm"></select>
+    <div id="ledger"></div>
+  </div>
+</div>
+
+<!-- REPORTS -->
+<div id="page-rep">
+  <div class="card"><h2>ઓવરહેડ એન્જિન (કેરેટ વાઇઝ)</h2>
+    <div class="res" id="r-out">₹0 પ્રતિ કેરેટ</div>
+  </div>
+  <div class="card"><h2>મહિનાનો સાર</h2><div id="rep-sum"></div>
+    <button class="btn sec" id="btn-csv">⬇️ હિસાબ CSV ડાઉનલોડ</button>
+  </div>
+  <div class="card"><h2>લેવાનાં (મુદત પ્રમાણે)</h2><div id="rep-recv"></div></div>
+  <div class="card"><h2>આપવાનાં</h2><div id="rep-pay"></div></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="page-set">
+  <div class="card"><h2>Gemini API Key (Google AI Studio)</h2>
+    <input id="s-key" type="password" placeholder="AIza...">
+    <div class="hint">Key ફોનમાં જ સેવ થાય છે. Google AI Studio માંથી ફ્રી key મળે છે. વગર key પણ મેન્યુઅલ એન્ટ્રી ચાલશે.</div>
+  </div>
+  <div class="card"><h2>બિઝનેસ સેટિંગ</h2>
+    <div class="grid2">
+      <div><label>મહિનાનું અનુમાનિત પ્રોડક્શન (કેરેટ)</label><input id="s-cts" type="number" inputmode="decimal"></div>
+      <div><label>બટાવ રેટ (% પ્રતિ મહિનો)</label><input id="s-batav" type="number" inputmode="decimal" step="0.05"></div>
+    </div>
+    <label>EMI માસિક ટારગેટ (₹)</label><input id="s-emi" type="number" inputmode="decimal">
+    <button class="btn" id="btn-saveset">સેવ કરો</button>
+  </div>
+  <div class="card"><h2>ડેટા</h2>
+    <button class="btn sec" id="btn-export">⬆️ બેકઅપ JSON ડાઉનલોડ</button>
+    <button class="btn sec" id="btn-import">⬇️ બેકઅપ JSON ઇમ્પોર્ટ</button>
+    <input type="file" id="impfile" accept="application/json" style="display:none">
+    <div class="hint">ફોન બદલતા પહેલાં બેકઅપ લેવા. ડેટા આ ફોનમાં જ સેવ થાય છે.</div>
+  </div>
+</div>
+
+</div>
+<div class="tabs" id="tabs"></div>
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+const SYS=`You are Diamond Jarvis, an expert Gujarati/Indian diamond manufacturing accountant. Extract diamond trading facts from Hinglish/Gujarati voice or text and return ONLY strict JSON, no markdown, with these keys: transaction_type (SALE|LOT_ENTRY|OUTSIDE_PURCHASE|UPAD|EXPENSE|QUERY), party_name, broker_dalal, rough_carats, rough_rate_per_ct, pieces_per_carat, pieces, polished_carats, labour_rate_applied (50/70/80), selling_rate_per_ct, tip_weight_carats, ten_carat_cent_deduction (true/false), dalali_mode (0|1|2), mudat_days, expected_payment_days, angadia_expenses, batav_rate_pct, partner_name (for UPAD: KV|VF|SHAILESH), upad_amount, direction (upad=withdrawal|jama=deposit), expense_category, expense_amount, query_text. Numbers must be plain numbers (no text). Use null when unknown. Gujarati/Hinglish number words: ek=1, das=10, pander=15, tis=30, bavan/50=50.`;
+const FIELDS=[
+ ["transaction_type","પ્રકાર","select",["SALE","LOT_ENTRY","OUTSIDE_PURCHASE","UPAD","EXPENSE","QUERY"]],
+ ["date","તારીખ","date"],
+ ["party_name","પાર્ટી/ડાયમંડ પાર્ટી","text"],
+ ["broker_dalal","દલાલ","text"],
+ ["rough_carats","રફ કેરેટ","num"],
+ ["rough_rate_per_ct","રફ ભાવ ₹/કેરેટ","num"],
+ ["pieces_per_carat","પીસ પ્રતિ કેરેટ","num"],
+ ["polished_carats","પોલિશ કેરેટ","num"],
+ ["labour_rate_applied","લેબર રેટ (50/70/80)","select",[50,70,80]],
+ ["selling_rate_per_ct","વેચાણ ભાવ ₹/કેરેટ","num"],
+ ["tip_weight_carats","ટિપ કેરેટ","num"],
+ ["ten_carat_cent_deduction","10+ કેરેટ: 2 સેન્ટ કપાયા?","bool"],
+ ["dalali_mode","દલાલી","select",["0","1","2"]],
+ ["mudat_days","મુદત દિવસ","num"],
+ ["expected_payment_days","પૈસા આવવાના દિવસ","num"],
+ ["angadia_expenses","આંગડિયા ખર્ચ ₹","num"],
+ ["batav_rate_pct","બટાવ %/મહિનો","num"],
+ ["partner_name","પાર્ટનર","select",["KV","VF","SHAILESH"]],
+ ["upad_amount","ઉપડ રકમ ₹","num"],
+ ["direction","દિશા","select",["upad","jama"]],
+ ["expense_category","ખર્ચ હેડ","text"],
+ ["expense_amount","ખર્ચ ₹","num"]
+];
+const SKEY="dj_v1";
+let S=JSON.parse(localStorage.getItem(SKEY)||'{}');
+if(!S.entries)S.entries=[];if(!S.settings)S.settings={key:"",assumedCts:450,batav:0.75,emiTarget:700000};
+const save=()=>localStorage.setItem(SKEY,JSON.stringify(S));
+const num=v=>{const n=parseFloat(v);return isNaN(n)?0:n};
+const rs=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+const cts=n=>(Math.round(n*100)/100)+" Ct";
+function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2600)}
+
+/* ---------- CALC ENGINE ---------- */
+function calc(e){
+ const c={};
+ const tip=num(e.tip_weight_carats);
+ let billable=0;
+ if(tip>0){billable=tip; if(tip>=10&&e.ten_carat_cent_deduction)billable=tip-0.02;}
+ else billable=num(e.polished_carats)||num(e.rough_carats);
+ const pieces=(num(e.rough_carats)>0&&num(e.pieces_per_carat)>0)?num(e.rough_carats)*num(e.pieces_per_carat):num(e.pieces);
+ c.pieces=Math.round(pieces);
+ if(e.transaction_type==="LOT_ENTRY"||e.transaction_type==="SALE"){
+   c.vfPayable=num(e.rough_rate_per_ct)*num(e.rough_carats)+c.pieces*50;
+   c.emiFund=c.pieces*20; c.profitBuffer=c.pieces*10;
+   c.labourBase=c.pieces*50; c.labour70=c.pieces*70; c.labour80=c.pieces*80;
+   const oh=monthOverheadRate();
+   c.ohRate=oh.rate; c.ohLabel=oh.label;
+ }
+ if(e.transaction_type==="SALE"){
+   const rate=num(e.selling_rate_per_ct);
+   c.billableCts=billable; c.bill=billable*rate;
+   const dal=num(e.dalali_mode)||0; c.dalaliMode=dal;
+   c.dalaliAmt=c.bill*dal/100;
+   const b=num(e.batav_rate_pct)||S.settings.batav||0.75;
+   c.batavRate=b;
+   const early=Math.max(0,num(e.mudat_days)-num(e.expected_payment_days));
+   c.earlyDays=early; c.batavAmt=c.bill*(b/100)*(early/30);
+   c.angadia=num(e.angadia_expenses);
+   c.netCash=c.bill-c.dalaliAmt-c.batavAmt-c.angadia;
+   c.dueIn=num(e.expected_payment_days);
+ }
+ if(e.transaction_type==="LOT_ENTRY"){
+   const oh=monthOverheadRate();
+   c.landed70=num(e.rough_rate_per_ct)*num(e.rough_carats)+c.pieces*70+num(e.rough_carats)*oh.rate;
+   c.landed80=c.landed70+c.pieces*10;
+   const pc=num(e.polished_carats);
+   if(pc>0){c.breakeven70=c.landed70/pc;c.breakeven80=c.landed80/pc;}
+   c.dueIn=num(e.mudat_days);
+   c.amount=c.landed70;
+ }
+ if(e.transaction_type==="OUTSIDE_PURCHASE"){
+   c.amount=num(e.rough_rate_per_ct)*num(e.rough_carats);
+   c.dueIn=num(e.mudat_days);
+ }
+ if(e.transaction_type==="UPAD")c.amount=(e.direction==="upad"?1:-1)*num(e.upad_amount);
+ if(e.transaction_type==="EXPENSE")c.amount=num(e.expense_amount);
+ return c;
+}
+function monthKey(d){const t=new Date(d||Date.now());return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")}
+function monthExpenses(mk){return S.entries.filter(e=>e.transaction_type==="EXPENSE"&&monthKey(e.date)===mk).reduce((a,e)=>a+num(e.expense_amount),0)}
+function monthOverheadRate(){
+ const now=new Date();
+ const pm=new Date(now.getFullYear(),now.getMonth()-1,1); const pmk=pm.getFullYear()+"-"+String(pm.getMonth()+1).padStart(2,"0");
+ const exp=monthExpenses(pmk)||S.settings.lastExpense||0;
+ const rate=exp/S.settings.assumedCts;
+ return{rate,label:rs(exp)+" (પિછલા મહિના ખર્ચ) ÷ "+S.settings.assumedCts+" Ct = ₹"+(Math.round(rate*100)/100)+"/Ct"};
+}
+
+/* ---------- AI PARSE ---------- */
+async function gemini(parts){
+ const key=S.settings.key;if(!key){toast("પહેલા Settings માં Gemini key નાખો");return null}
+ const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts}],systemInstruction:{parts:[{text:SYS}]},generationConfig:{temperature:0.1,responseMimeType:"application/json"}})});
+ if(!r.ok){toast("AI એરર: "+r.status);return null}
+ const j=await r.json();
+ try{return JSON.parse(j.candidates[0].content.parts[0].text)}catch(err){toast("AI જવાબ વાંચી ના શક્યો");return null}
+}
+async function doParse(){
+ const t=document.getElementById("rawtext").value.trim();
+ if(!t){toast("પહેલા લખો કે બોલો");return}
+ toast("AI વાંચી રહ્યો છે...");
+ const d=await gemini([{text:t}]);
+ if(d){d.date=new Date().toISOString().slice(0,10);openEditor(d)}
+}
+function doPhoto(){
+ const i=document.getElementById("photoinput");i.onchange=async()=>{
+  const f=i.files[0];if(!f)return;
+  toast("ચિટ્ઠી વાંચી રહ્યો છે...");
+  const b64=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(",")[1]);fr.readAsDataURL(f)});
+  const d=await gemini([{text:"Read this handwritten diamond memo/chitti photo and extract all visible numbers and names into the JSON schema."},{inline_data:{mime_type:f.type||"image/jpeg",data:b64}}]);
+  if(d){d.date=d.date||new Date().toISOString().slice(0,10);openEditor(d)} i.value="";
+ };i.click();
+}
+
+/* ---------- EDITOR ---------- */
+let CUR=null;
+function openEditor(d){
+ CUR={...d};document.getElementById("editcard").style.display="block";
+ renderEdit();document.getElementById("page-new").scrollIntoView({behavior:"smooth"});
+}
+function renderEdit(){
+ const box=document.getElementById("editfields");box.innerHTML="";
+ for(const[k,label,type,opts]of FIELDS){
+  const def=CUR[k]===0?0:(CUR[k]||"");
+  if(type==="select"){box.innerHTML+=`<label>${label}</label><select data-f="${k}">${(opts||[]).map(o=>`<option${String(def)===String(o)?" selected":""}>${o}</option>`).join("")}</select>`}
+  else if(type==="bool"){box.innerHTML+=`<label>${label}</label><select data-f="${k}"><option value="false"${!def?" selected":""}>ના</option><option value="true"${def?" selected":""}>હા</option></select>`}
+  else box.innerHTML+=`<label>${label}</label><input data-f="${k}" data-t="${type}" type="${type==="num"?"number":"text"}" inputmode="${type==="num"?"decimal":"text"}" value="${def}">`;
+ }
+ box.querySelectorAll("[data-f]").forEach(el=>el.addEventListener("input",()=>{const k=el.dataset.f;CUR[k]=el.dataset.t==="num"?num(el.value):el.value;showCalc()}));
+ showCalc();
+}
+function showCalc(){
+ if(!CUR)return;const e={...CUR};FIELDS.forEach(([k,,t])=>{if(t==="num")e[k]=num(e[k]);if(t==="bool")e[k]=String(e[k])==="true";if(t==="select")e[k]=String(e[k])});
+ const c=calc(e);let h="";
+ const line=(k,v,cls)=>v?`<div class="row"><span class="k">${k}</span><span class="v ${cls||""}">${v}</span></div>`:"";
+ if(e.transaction_type==="SALE"){h+=line("બિલેબલ વજન",cts(c.billableCts))+line("ગ્રોસ બિલ",rs(c.bill))+line("દલાલી "+c.dalaliMode+"%",rs(c.dalaliAmt))+line("બટાવ "+c.batavRate+"% × "+c.earlyDays+" દિવસ",rs(c.batavAmt))+line("આંગડિયા",rs(c.angadia))+line("નેટ હાથમાં બેંક",rs(c.netCash),"grn")+line("પૈસા આવશે",c.dueIn+" દિવસમાં")}
+ if(e.transaction_type==="LOT_ENTRY"){h+=line("પીસ",c.pieces)+line("VF/MFG ને દેય (₹50/પીસ)",rs(c.vfPayable),"red")+line("EMI ફંડ (₹20/પીસ)",rs(c.emiFund),"grn")+line("પ્રોફિટ બફર (₹10/પીસ)",rs(c.profitBuffer),"grn")+line("લેન્ડેડ કોસ્ટ @70"+(c.ohRate?" (ઓવરહેડ ₹"+Math.round(c.ohRate*100)/100+"/Ct સામેલ)":""),rs(c.landed70))+line("લેન્ડેડ @80",rs(c.landed80))+line("બ્રેકઈવન @70",c.breakeven70?rs(c.breakeven70)+"/પોલિશ Ct":"-")+line("બ્રેકઈવન @80",c.breakeven80?rs(c.breakeven80)+"/પોલિશ Ct":"-")}
+ if(e.transaction_type==="OUTSIDE_PURCHASE")h+=line("કુલ ખરીદી",rs(c.amount),"red")+line("મુદત",c.dueIn+" દિવસ");
+ if(e.transaction_type==="UPAD")h+=line((e.direction==="upad"?"ઉપડ (બહાર)":"જમા (અંદર)"),rs(Math.abs(c.amount)),e.direction==="upad"?"red":"grn");
+ if(e.transaction_type==="EXPENSE")h+=line("ખર્ચ",rs(c.amount),"red");
+ document.getElementById("calcbox").innerHTML=h||'<div class="hint">પ્રકાર પસંદ કરો</div>';
+}
+document.getElementById("btn-save").addEventListener("click",()=>{
+ const e={...CUR};FIELDS.forEach(([k,,t])=>{if(t==="num")e[k]=num(e[k]);if(t==="bool")e[k]=String(e[k])==="true";if(t==="select")e[k]=String(e[k])});
+ if(!e.transaction_type){toast("પ્રકાર પસંદ કરો");return}
+ e.id=Date.now();e.calc=calc(e);S.entries.push(e);save();renderAll();toast("સેવ થયું ✔");CUR=null;document.getElementById("editcard").style.display="none";document.getElementById("rawtext").value="";
+});
+
+/* ---------- VOICE ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){const r=new SR();r.lang="hi-IN";r.continuous=false;r.interimResults=false;
+ document.getElementById("mic").addEventListener("click",()=>{try{r.start();document.getElementById("mic").classList.add("rec");document.getElementById("micstat").textContent="સાંભળી રહ્યો છું... બોલો"}catch(e){}});
+ r.onresult=ev=>{const t=ev.results[0][0].transcript;document.getElementById("rawtext").value=t;document.getElementById("micstat").textContent="સાંભળ્યું";doParse()};
+ r.onend=()=>document.getElementById("mic").classList.remove("rec");
+ r.onerror=e=>{document.getElementById("mic").classList.remove("rec");document.getElementById("micstat").textContent="ફરી બોલો (માઇક પરમિશન આપવું)"}}
+else document.getElementById("mic").style.display="none";
+
+/* ---------- DASHBOARD / REPORTS ---------- */
+function renderAll(){renderHome();renderMonths();renderLedger();renderReports()}
+function monthEntries(){const mk=monthKey();return S.entries.filter(e=>monthKey(e.date)===mk)}
+function renderHome(){
+ const es=monthEntries();
+ const sale=es.filter(e=>e.transaction_type==="SALE").reduce((a,e)=>a+(e.calc.bill||0),0);
+ document.getElementById("h-sale").textContent=rs(sale);
+ document.getElementById("h-lot").textContent=es.filter(e=>e.transaction_type==="LOT_ENTRY").length;
+ const recv=S.entries.filter(e=>e.transaction_type==="SALE"&&!e.paid).reduce((a,e)=>a+(e.calc.netCash||0),0);
+ const pay=S.entries.filter(e=>(e.transaction_type==="OUTSIDE_PURCHASE"||(e.transaction_type==="LOT_ENTRY"))&&!e.paid).reduce((a,e)=>a+(e.calc.amount||0),0);
+ document.getElementById("h-recv").textContent=rs(recv);
+ document.getElementById("h-pay").textContent=rs(pay);
+ const emi=es.reduce((a,e)=>a+((e.calc.emiFund)||0),0);
+ document.getElementById("h-emi").textContent=rs(emi);
+ document.getElementById("h-emipcs").textContent="₹20/પીસ · 35,000 પીસ = ₹7 લાખ · આ મહિને "+es.reduce((a,e)=>a+(e.calc.pieces||0),0)+" પીસ";
+ // advice
+ const dues=S.entries.filter(e=>e.transaction_type==="SALE"&&!e.paid&&e.calc.dueIn!=null).map(e=>({p:e.party_name||"પાર્ટી",a:e.calc.netCash,d:e.calc.dueIn})).sort((a,b)=>a.d-b.d);
+ const outs=S.entries.filter(e=>e.paid!==true&&(e.transaction_type==="OUTSIDE_PURCHASE"||e.transaction_type==="LOT_ENTRY")&&e.calc.dueIn).map(e=>({p:e.party_name||"સપ્લાયર",a:e.calc.amount,d:e.calc.dueIn}));
+ let h="";
+ if(dues.length)h+="<div class='hint'><b style='color:var(--gold2)'>લેવાના (આવવાના ક્રમે):</b><br>"+dues.slice(0,5).map(d=>d.p+" · "+rs(d.a)+" · "+d.d+" દિવસ").join("<br>")+"</div>";
+ if(outs.length)h+="<div class='hint' style='margin-top:8px'><b style='color:var(--gold2)'>આપવાના:</b><br>"+outs.slice(0,5).map(d=>d.p+" · "+rs(d.a)+" · "+d.d+" દિવસ").join("<br>")+"</div>";
+ if(!h)h="હજી એન્ટ્રી નથી. New ટેબમાંથી બોલીને શરૂ કરો.";
+ document.getElementById("h-advice").innerHTML=h;
+ // upad
+ const bal={KV:0,VF:0,SHAILESH:0};
+ S.entries.filter(e=>e.transaction_type==="UPAD").forEach(e=>{bal[e.partner_name]=(bal[e.partner_name]||0)+(e.calc.amount||0)});
+ document.getElementById("h-upad").innerHTML=Object.entries(bal).map(([k,v])=>`<div class="row"><span class="k">${k}</span><span class="v ${v<0?"red":"grn"}">${rs(v)}</span></div>`).join("");
+}
+function renderMonths(){
+ const set=new Set(S.entries.map(e=>monthKey(e.date)));set.add(monthKey());
+ const sel=document.getElementById("lm");sel.innerHTML=[...set].sort().reverse().map(m=>`<option value="${m}">${m}</option>`).join("");
+}
+function renderLedger(){
+ const mk=document.getElementById("lm").value||monthKey();
+ const es=S.entries.filter(e=>monthKey(e.date)===mk).sort((a,b)=>b.id-a.id);
+ document.getElementById("ledger").innerHTML=es.length?es.map(e=>{
+  const cls={SALE:"b-sale",LOT_ENTRY:"b-lot",OUTSIDE_PURCHASE:"b-buy",UPAD:"b-upad",EXPENSE:"b-exp"}[e.transaction_type]||"";
+  let amt="";
+  if(e.transaction_type==="SALE")amt=rs(e.calc.netCash||e.calc.bill)+" નેટ";
+  else if(e.calc.amount)amt=rs(Math.abs(e.calc.amount));
+  return `<div class="row"><div><span class="badge ${cls}">${e.transaction_type}</span> ${e.party_name||e.partner_name||e.expense_category||""}<br><span class="k" style="font-size:11px">${e.date}${e.calc.dueIn?" · "+e.calc.dueIn+" દિવસ":""}</span></div><span class="v">${amt}</span></div>`;
+ }).join(""):'<div class="hint">આ મહિનામાં કંઈ નથી</div>';
+}
+function renderReports(){
+ const rate=monthOverheadRate();
+ document.getElementById("r-out").textContent=rate.label;
+ const es=monthEntries();
+ const sale=es.filter(e=>e.transaction_type==="SALE").reduce((a,e)=>a+(e.calc.bill||0),0);
+ const exp=es.filter(e=>e.transaction_type==="EXPENSE").reduce((a,e)=>a+e.calc.amount,0);
+ const recv=S.entries.filter(e=>e.transaction_type==="SALE"&&!e.paid).reduce((a,e)=>a+(e.calc.netCash||0),0);
+ const lot=es.filter(e=>e.transaction_type==="LOT_ENTRY");
+ document.getElementById("rep-sum").innerHTML=
+  `<div class="row"><span class="k">વેચાણ (ગ્રોસ)</span><span class="v">${rs(sale)}</span></div>
+   <div class="row"><span class="k">લોટ</span><span class="v">${lot.length} (${lot.reduce((a,e)=>a+(e.calc.pieces||0),0)} પીસ)</span></div>
+   <div class="row"><span class="k">ખર્ચ</span><span class="v red">${rs(exp)}</span></div>
+   <div class="row"><span class="k">EMI ફંડ ભરાયો</span><span class="v grn">${rs(es.reduce((a,e)=>a+(e.calc.emiFund||0),0))}</span></div>
+   <div class="row"><span class="k">કુલ લેવાના</span><span class="v red">${rs(recv)}</span></div>`;
+ const dues=S.entries.filter(e=>e.transaction_type==="SALE"&&!e.paid).map(e=>({p:e.party_name||"પાર્ટી",a:e.calc.netCash||0,d:e.calc.dueIn,dt:e.date}));
+ document.getElementById("rep-recv").innerHTML=dues.length?dues.sort((a,b)=>a.d-b.d).map(d=>`<div class="row"><span class="k">${d.p}<br><span style="font-size:11px">${d.dt} + ${d.d} દિવસ</span></span><span class="v">${rs(d.a)}</span></div>`).join(""):'<div class="hint">કોઈ લેવાનું નથી ✔</div>';
+ const outs=S.entries.filter(e=>e.paid!==true&&(e.transaction_type==="OUTSIDE_PURCHASE"||e.transaction_type==="LOT_ENTRY")&&e.calc.dueIn).map(e=>({p:e.party_name||"સપ્લાયર",a:e.calc.amount,d:e.calc.dueIn}));
+ document.getElementById("rep-pay").innerHTML=outs.length?outs.sort((a,b)=>a.d-b.d).map(d=>`<div class="row"><span class="k">${d.p}<br><span style="font-size:11px">${d.d} દિવસની મુદત</span></span><span class="v red">${rs(d.a)}</span></div>`).join(""):'<div class="hint">કોઈ આપવાનું નથી ✔</div>';
+}
+/* ---------- SETTINGS / EXPORT ---------- */
+function fillSettings(){document.getElementById("s-key").value=S.settings.key;document.getElementById("s-cts").value=S.settings.assumedCts;document.getElementById("s-batav").value=S.settings.batav;document.getElementById("s-emi").value=S.settings.emiTarget}
+document.getElementById("btn-saveset").addEventListener("click",()=>{S.settings.key=document.getElementById("s-key").value.trim();S.settings.assumedCts=num(document.getElementById("s-cts").value)||450;S.settings.batav=num(document.getElementById("s-batav").value)||0.75;S.settings.emiTarget=num(document.getElementById("s-emi").value)||700000;save();renderAll();toast("સેવ થયું ✔")});
+document.getElementById("btn-export").addEventListener("click",()=>{
+ const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="diamond-jarvis-backup.json";a.click()});
+document.getElementById("btn-import").addEventListener("click",()=>{const i=document.getElementById("impfile");i.onchange=()=>{const f=i.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{try{const d=JSON.parse(fr.result);if(d.entries){S=d;save();renderAll();toast("ઇમ્પોર્ટ થયું ✔")}}catch(e){toast("ફાઇલ ખોટી છી")}};fr.readAsText(f)};i.click()});
+document.getElementById("btn-csv").addEventListener("click",()=>{
+ const rows=[["date","type","party","billable_cts","bill","dalali","batav","angadia","net_cash","pieces","vf_payable","emi_fund","profit_buffer","landed70","breakeven70","due_days"]];
+ S.entries.forEach(e=>{const c=e.calc||{};rows.push([e.date,e.transaction_type,e.party_name||"",c.billableCts||"",c.bill||"",c.dalaliAmt||"",c.batavAmt||"",c.angadia||"",c.netCash||"",c.pieces||"",c.vfPayable||"",c.emiFund||"",c.profitBuffer||"",c.landed70||"",c.breakeven70||"",c.dueIn||""])});
+ const csv=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\n");
+ const b=new Blob(["\ufeff"+csv],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="hisab.csv";a.click()});
+
+/* ---------- TABS ---------- */
+const TABS=[["home","🏠","હોમ"],["new","🎙️","નવી"],["ledger","📖","લેજર"],["rep","📊","રિપોર્ટ"],["set","⚙️","સેટિંગ"]];
+document.getElementById("tabs").innerHTML=TABS.map(([id,ic,l])=>`<button data-t="${id}"${id==="home"?' class="on"':''}><span class="ic">${ic}</span>${l}</button>`).join("");
+document.getElementById("tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
+ document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
+ document.querySelectorAll(".wrap>div[id^=page]").forEach(p=>p.classList.remove("on"));
+ document.getElementById("page-"+b.dataset.t).classList.add("on");
+ if(b.dataset.t==="set")fillSettings();
+ if(b.dataset.t==="rep")renderReports();
+ if(b.dataset.t==="home")renderHome();
+});
+document.getElementById("btn-parse").addEventListener("click",doParse);
+document.getElementById("btn-photo").addEventListener("click",doPhoto);
+document.getElementById("lm").addEventListener("change",renderLedger);
+renderAll();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
+</script>
+</body>
+</html>
