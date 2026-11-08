@@ -65,7 +65,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 </style>
 </head>
 <body>
-<div class="hdr"><h1>💎 Diamond Jarvis</h1><div class="sub" id="hdrsub">હિસાબ બોલો, જર્વિસ લખી દેશે <span id="djver">v12</span></div></div>
+<div class="hdr"><h1>💎 Diamond Jarvis</h1><div class="sub" id="hdrsub">હિસાબ બોલો, જર્વિસ લખી દેશે <span id="djver">v13</span></div></div>
 <div class="wrap">
 
 <!-- HOME -->
@@ -96,6 +96,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
     <textarea id="rawtext" rows="4" placeholder="ઉદા: hi dost mene aaj 15 carat mal VF se liya 2500 per carat... kishor ne 11.18 tip likhi, 30 din mudat..."></textarea>
     <div class="grid2">
       <button class="btn sec" id="btn-parse">✨ પાર્સ કરો</button>
+      <button class="btn sec" id="btn-manual">✍️ જાતે લખો</button>
       <button class="btn sec" id="btn-photo">📷 ચિટ્ઠી ફોટો</button>
     </div>
     <input type="file" id="photoinput" accept="image/*" capture="environment" style="display:none">
@@ -218,7 +219,7 @@ function parseLocal(t){
  m=s.match(/(\d+(?:\.\d+)?|[a-z]{2,8})\s*(?:carat|ct|kerat|keret)/);if(m)o.rough_carats=n(m[1]);
  m=s.match(/(\d+(?:\.\d+)?)\s*(?:per\s*carat|ke\s*bhav|ka\s*bhav|no\s*bhav|na\s*bhav|pc\b)/)||s.match(/(?:bhav|rate)\s*(?:se|na|no)?\s*(\d+(?:\.\d+)?)/);if(m)o.rough_rate_per_ct=n(m[1]);
  const buy=/(lidh|kharid|khared|kridh|liya|levano|aavyo|aavi|lido)/.test(s);
- const sell=/(becha|bech|velo|veyu|vech|sold)/.test(s);
+ const sell=/(becha|bech|velo|veyu|vech|sold|sell|sale)/.test(s);
  const avak=/(paise aavya|paise aavyo|paisa aavyo|paise malya|paise malyo|paise mile|jama|deposit|mile)/.test(s);
  const jav=/(paise gaya|paise gaya che|kharch|kharchu|paise diya|paise didha|paise api)/.test(s);
  if(buy)o.transaction_type=/\b(vf|mfg|factory)\b/.test(s)?"LOT_ENTRY":"OUTSIDE_PURCHASE";
@@ -231,6 +232,7 @@ function parseLocal(t){
  const qs=[...s.matchAll(/\b(vvs\d?|vs\d?|si\d?|if|fg)\b/g)].map(x=>x[1].toUpperCase());if(qs.length)o.quality=qs.join(" ");
  const rp=/([a-z\u0A80-\u0AFF]{4,20})\s*(?:ni|na)?\s*(?:pase|pasethi|se|thi)\b/g;let pm;
  while((pm=rp.exec(s))){if(!nw[pm[1]]&&!BLK.includes(pm[1])){o.party_name=pm[1];break}}
+ if(!o.party_name){m=s.match(/\b(?:to|ne)\s+([a-z]{4,20})\b/);if(m&&!nw[m[1]]&&!BLK.includes(m[1]))o.party_name=m[1]}
  if(o.transaction_type==="EXPENSE"){m=s.match(/(?:rs\.?|rupee|\u20b9)?\s*(\d+(?:\.\d+)?)/);if(m)o.expense_amount=n(m[1]);o.expense_category="other"}
  if(o.transaction_type==="AAVAK"||o.transaction_type==="JAVAK"){m=s.match(/(\d+(?:\.\d+)?)/);if(m)o.amount=n(m[1])}
  if(o.transaction_type==="UPAD"){m=s.match(/\b(kv|vf|shailesh)\b/);if(m)o.partner_name=m[1].toUpperCase();m=s.match(/(\d+(?:\.\d+)?)/);if(m)o.upad_amount=n(m[1]);o.direction=/(jama|deposit)/.test(s)?"jama":"upad"}
@@ -321,7 +323,7 @@ async function doParse(){
  pstat("AI વાંચી રહ્યો છે...",true);
  const d=await gemini([{text:t}]);
  if(d){el.value="";d.date=new Date().toISOString().slice(0,10);openEditor(d);pstat("એન્ટ્રી બની ✔ નીચે ફોર્મ જોવો કરો",true)}
- else pstat((AI_ERR||"સમજાયું નથી")+" — ફરી કોશિશ કરવા આ લાલ લાઈન દબાવો",false);
+ else pstat((AI_ERR||"સમજાયું નથી")+" — આ લાલ લાઈન દબાવો કે નીચે ✐️ જાતે લખો",false);
 }
 function doPhoto(){
  const i=document.getElementById("photoinput");i.onchange=async()=>{
@@ -582,7 +584,7 @@ document.getElementById("ch-voice").addEventListener("click",()=>{closeSheet();g
 document.getElementById("ch-type").addEventListener("click",()=>{closeSheet();goTab("new");const t=document.getElementById("rawtext");t.scrollIntoView({behavior:"smooth"});t.focus()});
 document.getElementById("ch-photo").addEventListener("click",()=>{closeSheet();doPhoto()});
 document.getElementById("btn-parse").addEventListener("click",doParse);
-document.getElementById("btn-photo").addEventListener("click",doPhoto);
+document.getElementById("btn-manual").addEventListener("click",()=>{const t=document.getElementById("rawtext").value.trim();let d={};if(t){d=parseLocal(t)}if(d&&d.transaction_type){d.date=new Date().toISOString().slice(0,10);openEditor(d);document.getElementById("rawtext").value="";pstat("\u0a95\u0abe\u0ab0\u0acd\u0aa1 \u0a96\u0ac1\u0ab2\u0acd\u0aaf\u0ac1\u0a82 (AI \u0ab5\u0a97\u0ab0) - \u0aa4\u0aaa\u0abe\u0ab8\u0abe \u0ab8\u0abe\u0a9a\u0ac1\u0a82 \u0a95\u0ab0\u0ac0 \u0ab8\u0ac7\u0ab5 \u0a95\u0ab0\u0acb",true)}else{openEditor({});document.getElementById("rawtext").value="";pstat("\u0a95\u0abe\u0ab0\u0acd\u0aa1 \u0a96\u0ac1\u0ab2\u0acd\u0aaf\u0ac1\u0a82 - \u0ab9\u0abe\u0aa5\u0ac7\u0aa5\u0ac0 \u0ab2\u0a96\u0acb, AI \u0a95\u0abe\u0a82 \u0aa8\u0aa5\u0ac0",true)}});
 document.getElementById("lm").addEventListener("change",renderLedger);
 function retrySync(){S.entries.forEach(e=>{if(e.syncfail||(!e._synced&&e.date===new Date().toISOString().slice(0,10)))syncEntry(e)})}
 setTimeout(retrySync,4000);setInterval(retrySync,60000);
