@@ -65,7 +65,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 </style>
 </head>
 <body>
-<div class="hdr"><h1>💎 Diamond Jarvis</h1><div class="sub" id="hdrsub">હિસાબ બોલો, જર્વિસ લખી દેશે <span id="djver">v10</span></div></div>
+<div class="hdr"><h1>💎 Diamond Jarvis</h1><div class="sub" id="hdrsub">હિસાબ બોલો, જર્વિસ લખી દેશે <span id="djver">v11</span></div></div>
 <div class="wrap">
 
 <!-- HOME -->
@@ -208,6 +208,34 @@ const cts=n=>(Math.round(n*100)/100)+" Ct";
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2600)}
 function pstat(t,ok){const e=document.getElementById("pstat");e.textContent=t;e.style.display="block";e.style.background=ok?"#0e7a3c":"#b3261e";e.style.color="#fff"}
 let AI_ERR="";
+const BLK=["bhav","mal","rate","carat","ke","ka","ma","me","he","che","chhe","aa","to","ne","le","do","ek"];
+function parseLocal(t){
+ const s=(" "+t.toLowerCase()+" ").replace(/[੤,।]/g," ");
+ const nw={ek:1,be:2,tran:3,teen:3,char:4,chaar:4,panch:5,chh:6,chhe:6,sat:7,aath:8,ath:8,nav:9,das:10,barah:12,terah:13,pander:15,solah:16,bis:20,vis:20,tis:30,teis:30,chalis:40,pachas:50,sath:60,sattar:70,assi:80,nabbe:90,hajar:1000};
+ const n=x=>{x=(x||"").trim();if(/^\d+(\.\d+)?$/.test(x))return parseFloat(x);return nw[x]||null};
+ const o={transaction_type:null,party_name:null,rough_carats:null,rough_rate_per_ct:null,polished_carats:null,selling_rate_per_ct:null,mudat_days:null,expected_payment_days:null,quality:null,upad_amount:null,expense_amount:null,expense_category:null,direction:null,partner_name:null,subtype:null,amount:null};
+ let m;
+ m=s.match(/(\d+(?:\.\d+)?|[a-z]{2,8})\s*(?:carat|ct|kerat|keret)/);if(m)o.rough_carats=n(m[1]);
+ m=s.match(/(\d+(?:\.\d+)?)\s*(?:per\s*carat|ke\s*bhav|ka\s*bhav|no\s*bhav|na\s*bhav|pc\b)/)||s.match(/(?:bhav|rate)\s*(?:se|na|no)?\s*(\d+(?:\.\d+)?)/);if(m)o.rough_rate_per_ct=n(m[1]);
+ const buy=/(liya|lidho|lido|kharid|khared|aavyo|aavi|levano|lidha)/.test(s);
+ const sell=/(becha|bech|velo|veyu|vech|sold)/.test(s);
+ const avak=/(paise aavya|paise aavyo|paisa aavyo|paise malya|paise malyo|paise mile|jama|deposit|mile)/.test(s);
+ const jav=/(paise gaya|paise gaya che|kharch|kharchu|paise diya|paise didha|paise api)/.test(s);
+ if(buy)o.transaction_type=/\b(vf|mfg|factory)\b/.test(s)?"LOT_ENTRY":"OUTSIDE_PURCHASE";
+ else if(sell)o.transaction_type="SALE";
+ else if(avak){o.transaction_type="AAVAK";o.subtype=/(invest|dhanda|business|lagani|lagan)/.test(s)?"INVESTMENT":"UCHHINA"}
+ else if(jav)o.transaction_type="EXPENSE";
+ else if(/upad/.test(s))o.transaction_type="UPAD";
+ m=s.match(/(\d+)\s*(?:din|days|divas)/);if(m)o.mudat_days=parseInt(m[1]);
+ m=/\b(vvs|vvs1|vvs2|vs1|vs2|si1|si2|si|silk)\b/.exec(s);if(m)o.quality=m[1].toUpperCase();
+ const rp=/([a-z\u0A80-\u0AFF]{4,20})\s*(?:ni|na)?\s*(?:pase|pasethi|se|thi)\b/g;let pm;
+ while((pm=rp.exec(s))){if(!nw[pm[1]]&&!BLK.includes(pm[1])){o.party_name=pm[1];break}}
+ if(o.transaction_type==="EXPENSE"){m=s.match(/(?:rs\.?|rupee|\u20b9)?\s*(\d+(?:\.\d+)?)/);if(m)o.expense_amount=n(m[1]);o.expense_category="other"}
+ if(o.transaction_type==="AAVAK"||o.transaction_type==="JAVAK"){m=s.match(/(\d+(?:\.\d+)?)/);if(m)o.amount=n(m[1])}
+ if(o.transaction_type==="UPAD"){m=s.match(/\b(kv|vf|shailesh)\b/);if(m)o.partner_name=m[1].toUpperCase();m=s.match(/(\d+(?:\.\d+)?)/);if(m)o.upad_amount=n(m[1]);o.direction=/(jama|deposit)/.test(s)?"jama":"upad"}
+ if(o.transaction_type==="SALE")o.selling_rate_per_ct=o.rough_rate_per_ct;
+ return o;
+}
 
 /* ---------- CALC ENGINE ---------- */
 function calc(e){
@@ -271,8 +299,8 @@ async function gemini(parts){
  AI_ERR="";
  const key=(S.settings.key||"").trim();if(!key){AI_ERR="પહેલા Settings માં Gemini key નાખો";toast(AI_ERR);return null}
  for(let mi=0;mi<2;mi++){
-  if(mi>0){if(typeof pstat==="function")pstat("AI busy છે, 5 સેકન્ડ પછી ફરી કોશિશ...",true);await new Promise(r=>setTimeout(r,5000))}
-  const ac=new AbortController();const tmo=setTimeout(()=>ac.abort(),30000);let r;
+  if(mi>0){if(typeof pstat==="function")pstat("AI busy છે, 5 સેકન્ડ પછી ફરી કોશિશ...",true);await new Promise(r=>setTimeout(r,3000))}
+  const ac=new AbortController();const tmo=setTimeout(()=>ac.abort(),12000);let r;
   try{r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key="+key,{method:"POST",signal:ac.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts}],systemInstruction:{parts:[{text:SYS}]},generationConfig:{temperature:0.1,responseMimeType:"application/json"}})})}
   catch(e){clearTimeout(tmo);AI_ERR="AI સાથે કનેક્ટ ના થયો (નેટ ચેક કરો)";continue}
   clearTimeout(tmo);
@@ -285,10 +313,14 @@ async function gemini(parts){
 async function doParse(){
  const el=document.getElementById("rawtext");const t=el.value.trim();
  if(!t){pstat("પહેલા લખો કે બોલો",false);return}
+ const o=parseLocal(t);
+ if(o&&o.transaction_type&&(o.rough_carats||o.amount!=null||o.upad_amount||o.expense_amount||o.rough_rate_per_ct)){
+  el.value="";o.date=new Date().toISOString().slice(0,10);openEditor(o);
+  pstat("એન્ટ્રી બની ✔ (તરત, AI વગર) નીચે ફોર્મ જોવો કરો",true);return}
  pstat("AI વાંચી રહ્યો છે...",true);
  const d=await gemini([{text:t}]);
- if(d){el.value="";d.date=new Date().toISOString().slice(0,10);openEditor(d);pstat("એન્ટ્રી બની ✔ નીચે ફોર્મ ફરાયો, તપાસીને સેવ કરો",true)}
- else pstat(AI_ERR||"સમજાયું નથી, ફરી લખો",false);
+ if(d){el.value="";d.date=new Date().toISOString().slice(0,10);openEditor(d);pstat("એન્ટ્રી બની ✔ નીચે ફોર્મ જોવો કરો",true)}
+ else pstat((AI_ERR||"સમજાયું નથી")+" — ફરી કોશિશ કરવા આ લાલ લાઈન દબાવો",false);
 }
 function doPhoto(){
  const i=document.getElementById("photoinput");i.onchange=async()=>{
@@ -372,6 +404,7 @@ async function onMicStop(){
  if(d){openEditor(d);document.getElementById("micstat").textContent="સમજાયું ✔ ચેક કરીને સેવ કરો"}
  else document.getElementById("micstat").textContent=AI_ERR||"સમજાયું નથી, ફરી બોલો (કે લખીને/ચિટ્ઠી ફૅરવાટ)"}
 document.getElementById("mic").addEventListener("click",startMic);
+document.getElementById("pstat").addEventListener("click",()=>{const e=document.getElementById("pstat");if(e.style.display!=="none"&&e.style.background==="rgb(179, 38, 30)")doParse()});
 window.__micStart=startMic;
 
 /* ---------- DASHBOARD / REPORTS ---------- */
