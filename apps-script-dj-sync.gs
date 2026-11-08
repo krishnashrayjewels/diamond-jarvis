@@ -87,9 +87,15 @@ function anchors_(sh){
   return a;
 }
 function rangeStart_(sh,totalRow,col){
-  const f=String(sh.getRange(totalRow,{A:1,B:2,C:3}[col]).getFormula()||"");
-  const m=f.match(new RegExp("SUM\\\\("+col+"\\\\d+:"+col+"\\\\d+","i"));
-  return m?parseInt(m[1],10):null;
+  if(!totalRow)return null;
+  const f=String(sh.getRange(totalRow,2).getFormula()||"").toUpperCase();
+  const at=f.indexOf("SUM");
+  if(at<0)return null;
+  const s=f.indexOf(col,at),e=f.indexOf(":",s);
+  if(s<0||e<0)return null;
+  let d="";
+  for(const ch of f.substring(s+1,e)){if(ch>="0"&&ch<="9")d+=ch;}
+  return d?parseInt(d,10):null;
 }
 
 /* ---------- first empty row, insert if full ---------- */
