@@ -1,4 +1,4 @@
-// Diamond Jarvis -> KV HISAB auto-sync v2 (Nov 8, 2026)
+// Diamond Jarvis -> KV HISAB auto-sync v3 (Nov 8, 2026): v2 + DELETE (app entry id marker in col P)
 // Entries write DIRECTLY into the month tab's real sections:
 //   SALE -> SELL (Vechan) | LOT_ENTRY / OUTSIDE_PURCHASE -> PURCHASE (Kharidi)
 //   UPAD -> JAVAK UPAD col (partner KV/VF/SHAILESH) or AAVAK row (jama)
@@ -12,15 +12,22 @@
 const SHEET_ID="1RWcEmDj4qt2QGmGWFL_b0AQh3YcG5DH83AwIbJ50DII";
 const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-function doGet(){return json_({ok:true,msg:"Diamond Jarvis sync v2 running"});}
+function doGet(){return json_({ok:true,msg:"Diamond Jarvis sync v3 running"});}
 
 function doPost(e){
   try{
     const p=JSON.parse((e&&e.postData&&e.postData.contents)||"{}");
     if(!p||!p.type||p.type==="QUERY")return json_({ok:true,skipped:true});
     const ss=SpreadsheetApp.openById(SHEET_ID);
+    if(p.type==="DELETE"){
+      const sh=monthSheet_(ss,p.date);
+      return json_({ok:true,deleted:deleteById_(sh,p.id)});
+    }
     const sh=monthSheet_(ss,p.date);
     const where=writeEntry_(sh,p);
+    const m=/row (\d+)/.exec(where);
+    ensureColP_(sh);
+    if(m&&p.id)sh.getRange(Number(m[1]),16).setValue(String(p.id));
     return json_({ok:true,wrote:where});
   }catch(err){
     return json_({ok:false,error:String(err&&err.message||err)});
@@ -110,6 +117,32 @@ function nextRow_(sh,col,start,end){
 function quality_(sh,headerRow,col,q){
   if(!q||!headerRow)return;
   if(!String(sh.getRange(headerRow,col).getDisplayValue()||"").trim())sh.getRange(headerRow,col).setValue("QUALITY");
+}
+
+/* ---------- ensure marker column P exists ---------- */
+function ensureColP_(sh){
+  if(sh.getMaxColumns()<16)sh.insertColumnsAfter(sh.getMaxColumns(),16-sh.getMaxColumns());
+}
+
+/* ---------- delete one entry by app id (marker col P) ---------- */
+function deleteById_(sh,id){
+  if(id==null)return "no id";
+  ensureColP_(sh);
+  const want=String(id);
+  const rows=Math.min(sh.getMaxRows(),400);
+  const v=sh.getRange(1,16,rows,1).getDisplayValues();
+  for(let i=0;i<v.length;i++){
+    if(String(v[i][0]).trim()===want){
+      const r=i+1;
+      const left=String(sh.getRange(r,1).getDisplayValue()||"").trim();
+      const right=String(sh.getRange(r,8).getDisplayValue()||"").trim();
+      if(left)sh.getRange(r,1,1,10).clearContent();
+      if(right)sh.getRange(r,8,1,7).clearContent();
+      sh.getRange(r,16).clearContent();
+      return "row "+r;
+    }
+  }
+  return "not found";
 }
 
 /* ---------- write one entry ---------- */
