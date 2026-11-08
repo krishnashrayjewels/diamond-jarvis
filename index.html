@@ -48,6 +48,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 .hint{color:var(--mut);font-size:12px;margin-top:8px;line-height:1.5}
 .res{background:#0d1219;border:1px dashed #3a465c;border-radius:12px;padding:12px;margin-top:12px}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:10px 18px;border-radius:999px;font-weight:600;z-index:99;display:none}
+.pstat{margin-top:10px;padding:10px 14px;border-radius:12px;font-weight:600;display:none;text-align:center}
 [id^=page-]{display:none}[id^=page-].on{display:block}
 .fab{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#f5d78e,#c9922e);color:#0b0e14;border:0;font-size:34px;font-weight:700;z-index:10;box-shadow:0 6px 20px rgba(232,182,76,.45)}
 .sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:98;display:none}
@@ -64,7 +65,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 </style>
 </head>
 <body>
-<div class="hdr"><h1>💎 Diamond Jarvis</h1><div class="sub" id="hdrsub">હિસાબ બોલો, જર્વિસ લખી દેશે</div></div>
+<div class="hdr"><h1>💎 Diamond Jarvis</h1><div class="sub" id="hdrsub">હિસાબ બોલો, જર્વિસ લખી દેશે <span id="djver">v10</span></div></div>
 <div class="wrap">
 
 <!-- HOME -->
@@ -98,6 +99,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
       <button class="btn sec" id="btn-photo">📷 ચિટ્ઠી ફોટો</button>
     </div>
     <input type="file" id="photoinput" accept="image/*" capture="environment" style="display:none">
+    <div class="pstat" id="pstat"></div>
   </div>
   <div id="editcard" style="display:none">
     <div class="card"><h2>એન્ટ્રી ચેક કરી સેવ કરો</h2><div id="editfields"></div><div id="calcbox" class="res"></div>
@@ -204,6 +206,8 @@ const num=v=>{const n=parseFloat(v);return isNaN(n)?0:n};
 const rs=n=>"₹"+Math.round(n).toLocaleString("en-IN");
 const cts=n=>(Math.round(n*100)/100)+" Ct";
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2600)}
+function pstat(t,ok){const e=document.getElementById("pstat");e.textContent=t;e.style.display="block";e.style.background=ok?"#0e7a3c":"#b3261e";e.style.color="#fff"}
+let AI_ERR="";
 
 /* ---------- CALC ENGINE ---------- */
 function calc(e){
@@ -264,20 +268,27 @@ function monthOverheadRate(){
 
 /* ---------- AI PARSE ---------- */
 async function gemini(parts){
- const key=(S.settings.key||"").trim();if(!key){toast("પહેલા Settings માં Gemini key નાખો");return null}
- const ac=new AbortController();const tmo=setTimeout(()=>ac.abort(),30000);let r;
- try{r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key="+key,{method:"POST",signal:ac.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts}],systemInstruction:{parts:[{text:SYS}]},generationConfig:{temperature:0.1,responseMimeType:"application/json"}})})}catch(e){clearTimeout(tmo);toast("AI સાથે કનેક્ટ ના થયો, ફરી પ્રયત્ન કરો");return null}
- clearTimeout(tmo);
- if(!r.ok){let m="AI એરર: "+r.status;try{const er=await r.json();if(er&&er.error&&er.error.message)m+=" - "+er.error.message}catch(e){}toast(m);return null}
- const j=await r.json();
- try{return JSON.parse(j.candidates[0].content.parts[0].text)}catch(err){toast("AI જવાબ વાંચી ના શક્યો");return null}
+ AI_ERR="";
+ const key=(S.settings.key||"").trim();if(!key){AI_ERR="પહેલા Settings માં Gemini key નાખો";toast(AI_ERR);return null}
+ for(let mi=0;mi<2;mi++){
+  if(mi>0){if(typeof pstat==="function")pstat("AI busy છે, 5 સેકન્ડ પછી ફરી કોશિશ...",true);await new Promise(r=>setTimeout(r,5000))}
+  const ac=new AbortController();const tmo=setTimeout(()=>ac.abort(),30000);let r;
+  try{r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key="+key,{method:"POST",signal:ac.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts}],systemInstruction:{parts:[{text:SYS}]},generationConfig:{temperature:0.1,responseMimeType:"application/json"}})})}
+  catch(e){clearTimeout(tmo);AI_ERR="AI સાથે કનેક્ટ ના થયો (નેટ ચેક કરો)";continue}
+  clearTimeout(tmo);
+  if(!r.ok){let m="AI એરર: "+r.status;try{const er=await r.json();if(er&&er.error&&er.error.message)m+=" - "+er.error.message}catch(e){}AI_ERR=m;if(!(r.status==429||r.status>=500||r.status==404))break;continue}
+  const j=await r.json();
+  try{return JSON.parse(j.candidates[0].content.parts[0].text)}catch(err){AI_ERR="AI જવાબ વાંચી ના શક્યો";continue}
+ }
+ return null;
 }
 async function doParse(){
- const t=document.getElementById("rawtext").value.trim();
- if(!t){toast("પહેલા લખો કે બોલો");return}
- toast("AI વાંચી રહ્યો છે...");
+ const el=document.getElementById("rawtext");const t=el.value.trim();
+ if(!t){pstat("પહેલા લખો કે બોલો",false);return}
+ pstat("AI વાંચી રહ્યો છે...",true);
  const d=await gemini([{text:t}]);
- if(d){d.date=new Date().toISOString().slice(0,10);openEditor(d)}
+ if(d){el.value="";d.date=new Date().toISOString().slice(0,10);openEditor(d);pstat("એન્ટ્રી બની ✔ નીચે ફોર્મ ફરાયો, તપાસીને સેવ કરો",true)}
+ else pstat(AI_ERR||"સમજાયું નથી, ફરી લખો",false);
 }
 function doPhoto(){
  const i=document.getElementById("photoinput");i.onchange=async()=>{
@@ -285,7 +296,7 @@ function doPhoto(){
   toast("ચિટ્ઠી વાંચી રહ્યો છે...");
   const b64=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(",")[1]);fr.readAsDataURL(f)});
   const d=await gemini([{text:"Read this handwritten diamond memo/chitti photo and extract all visible numbers and names into the JSON schema."},{inline_data:{mime_type:f.type||"image/jpeg",data:b64}}]);
-  if(d){d.date=d.date||new Date().toISOString().slice(0,10);openEditor(d)} i.value="";
+  if(d){d.date=d.date||new Date().toISOString().slice(0,10);openEditor(d);pstat("ચિટ્ઠી વાંચાઈ ✔ નીચે ફોર્મ ફરાયો",true)} else pstat(AI_ERR||"ચિટ્ઠી વાંચાઈ નથી",false); i.value="";
  };i.click();
 }
 
@@ -359,7 +370,7 @@ async function onMicStop(){
  const b64=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(",")[1]);fr.readAsDataURL(blob)});
  const d=await gemini([{text:"This is a spoken diamond-trade entry recorded on a phone, in Gujarati, Hindi or Hinglish (numbers may be spoken as words). First understand the audio exactly, then extract it into the JSON schema. Carat, pees, rate, mudat, dalali, party name sab dhyan se."},{inline_data:{mime_type:blob.type||"audio/webm",data:b64}}]);
  if(d){openEditor(d);document.getElementById("micstat").textContent="સમજાયું ✔ ચેક કરીને સેવ કરો"}
- else document.getElementById("micstat").textContent="સમજાયું નથી, ફરી બોલો (કે લખીને/ચિટ્ઠી ફોટો)"}
+ else document.getElementById("micstat").textContent=AI_ERR||"સમજાયું નથી, ફરી બોલો (કે લખીને/ચિટ્ઠી ફૅરવાટ)"}
 document.getElementById("mic").addEventListener("click",startMic);
 window.__micStart=startMic;
 
