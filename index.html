@@ -121,6 +121,10 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
     <input id="s-key" type="password" placeholder="AIza...">
     <div class="hint">Key ફોનમાં જ સેવ થાય છે. Google AI Studio માંથી ફ્રી key મળે છે. વગર key પણ મેન્યુઅલ એન્ટ્રી ચાલશે.</div>
   </div>
+  <div class="card"><h2>Drive Sync URL (Apps Script)</h2>
+    <input id="s-sync" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="hint">આ URL નાખશો તો દરેક એન્ટ્રી સેવ થતાં જ Google Drive ના KV HISAB માં પણ આપમેળે સેવ થશે. URL Fo ના સ્ટેપ્સ પ્રમાણે એક વાર બનાવવાનો છે.</div>
+  </div>
   <div class="card"><h2>બિઝનેસ સેટિંગ</h2>
     <div class="grid2">
       <div><label>મહિનાનું અનુમાનિત પ્રોડક્શન (કેરેટ)</label><input id="s-cts" type="number" inputmode="decimal"></div>
@@ -169,7 +173,7 @@ const FIELDS=[
 ];
 const SKEY="dj_v1";
 let S=JSON.parse(localStorage.getItem(SKEY)||'{}');
-if(!S.entries)S.entries=[];if(!S.settings)S.settings={key:"",assumedCts:450,batav:0.75,emiTarget:700000};
+if(!S.entries)S.entries=[];if(!S.settings)S.settings={key:"",sync:"",assumedCts:450,batav:0.75,emiTarget:700000};
 const save=()=>localStorage.setItem(SKEY,JSON.stringify(S));
 const num=v=>{const n=parseFloat(v);return isNaN(n)?0:n};
 const rs=n=>"₹"+Math.round(n).toLocaleString("en-IN");
@@ -257,6 +261,14 @@ function doPhoto(){
  };i.click();
 }
 
+/* ---------- DRIVE SYNC ---------- */
+function syncEntry(e){
+ const url=S.settings.sync;if(!url)return;
+ const c=e.calc||{};
+ const p={date:e.date,type:e.transaction_type,party:e.party_name||e.partner_name||e.expense_category||"",billable_cts:c.billableCts||"",bill:c.bill||"",dalali:c.dalaliAmt||"",batav:c.batavAmt||"",angadia:c.angadia||"",net_cash:c.netCash||"",pieces:c.pieces||"",vf_payable:c.vfPayable||"",emi_fund:c.emiFund||"",profit_buffer:c.profitBuffer||"",landed70:c.landed70||"",breakeven70:c.breakeven70||"",due_days:c.dueIn||""};
+ fetch(url,{method:"POST",mode:"no-cors",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)}).then(()=>toast("Drive ma bhi save ✔")).catch(()=>toast("Drive sync nathi thayu, entry app ma to save che"));
+}
+
 /* ---------- EDITOR ---------- */
 let CUR=null;
 function openEditor(d){
@@ -288,7 +300,7 @@ function showCalc(){
 document.getElementById("btn-save").addEventListener("click",()=>{
  const e={...CUR};FIELDS.forEach(([k,,t])=>{if(t==="num")e[k]=num(e[k]);if(t==="bool")e[k]=String(e[k])==="true";if(t==="select")e[k]=String(e[k])});
  if(!e.transaction_type){toast("પ્રકાર પસંદ કરો");return}
- e.id=Date.now();e.calc=calc(e);S.entries.push(e);save();renderAll();toast("સેવ થયું ✔");CUR=null;document.getElementById("editcard").style.display="none";document.getElementById("rawtext").value="";
+ e.id=Date.now();e.calc=calc(e);S.entries.push(e);save();syncEntry(e);renderAll();toast("સેવ થયું ✔");CUR=null;document.getElementById("editcard").style.display="none";document.getElementById("rawtext").value="";
 });
 
 /* ---------- VOICE ---------- */
@@ -363,8 +375,8 @@ function renderReports(){
  document.getElementById("rep-pay").innerHTML=outs.length?outs.sort((a,b)=>a.d-b.d).map(d=>`<div class="row"><span class="k">${d.p}<br><span style="font-size:11px">${d.d} દિવસની મુદત</span></span><span class="v red">${rs(d.a)}</span></div>`).join(""):'<div class="hint">કોઈ આપવાનું નથી ✔</div>';
 }
 /* ---------- SETTINGS / EXPORT ---------- */
-function fillSettings(){document.getElementById("s-key").value=S.settings.key;document.getElementById("s-cts").value=S.settings.assumedCts;document.getElementById("s-batav").value=S.settings.batav;document.getElementById("s-emi").value=S.settings.emiTarget}
-document.getElementById("btn-saveset").addEventListener("click",()=>{S.settings.key=document.getElementById("s-key").value.trim();S.settings.assumedCts=num(document.getElementById("s-cts").value)||450;S.settings.batav=num(document.getElementById("s-batav").value)||0.75;S.settings.emiTarget=num(document.getElementById("s-emi").value)||700000;save();renderAll();toast("સેવ થયું ✔")});
+function fillSettings(){document.getElementById("s-key").value=S.settings.key;document.getElementById("s-sync").value=S.settings.sync||"";document.getElementById("s-cts").value=S.settings.assumedCts;document.getElementById("s-batav").value=S.settings.batav;document.getElementById("s-emi").value=S.settings.emiTarget}
+document.getElementById("btn-saveset").addEventListener("click",()=>{S.settings.key=document.getElementById("s-key").value.trim();S.settings.sync=document.getElementById("s-sync").value.trim();S.settings.assumedCts=num(document.getElementById("s-cts").value)||450;S.settings.batav=num(document.getElementById("s-batav").value)||0.75;S.settings.emiTarget=num(document.getElementById("s-emi").value)||700000;save();renderAll();toast("સેવ થયું ✔")});
 document.getElementById("btn-export").addEventListener("click",()=>{
  const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="diamond-jarvis-backup.json";a.click()});
 document.getElementById("btn-import").addEventListener("click",()=>{const i=document.getElementById("impfile");i.onchange=()=>{const f=i.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{try{const d=JSON.parse(fr.result);if(d.entries){S=d;save();renderAll();toast("ઇમ્પોર્ટ થયું ✔")}}catch(e){toast("ફાઇલ ખોટી છી")}};fr.readAsText(f)};i.click()});
