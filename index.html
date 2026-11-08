@@ -48,7 +48,18 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 .hint{color:var(--mut);font-size:12px;margin-top:8px;line-height:1.5}
 .res{background:#0d1219;border:1px dashed #3a465c;border-radius:12px;padding:12px;margin-top:12px}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:10px 18px;border-radius:999px;font-weight:600;z-index:99;display:none}
-#page{display:none}#page.on{display:block}
+[id^=page-]{display:none}[id^=page-].on{display:block}
+.fab{position:fixed;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#f5d78e,#c9922e);color:#0b0e14;border:0;font-size:34px;font-weight:700;z-index:10;box-shadow:0 6px 20px rgba(232,182,76,.45)}
+.sheetbg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:98;display:none}
+.sheet{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px;z-index:99;display:none}
+.sheet button{display:block;width:100%;background:#1b2330;color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:15px;font-size:16px;font-weight:600;text-align:left;margin-top:8px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:6px}
+.chips button{flex:0 0 auto;background:#1b2330;border:1px solid var(--line);color:var(--mut);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600}
+.chips button.on{background:var(--gold);color:#0b0e14;border-color:var(--gold)}
+.dhead{color:var(--gold2);font-size:13px;font-weight:700;margin:14px 2px 8px}
+.ecard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.ecard .tt{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ecard .tm{color:var(--mut);font-size:11px}
 </style>
 </head>
 <body>
@@ -56,7 +67,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 <div class="wrap">
 
 <!-- HOME -->
-<div id="page-home" class="on">
+<div id="page-home" class="page on">
   <div class="card"><h2>આ મહિનો</h2>
     <div class="row" style="display:flex;gap:6px;border:0">
       <div class="stat"><div class="n grn" id="h-sale">₹0</div><div class="l">વેચાણ</div></div>
@@ -75,7 +86,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 </div>
 
 <!-- NEW -->
-<div id="page-new">
+<div id="page-new" class="page">
   <div class="card">
     <h2>બોલો કે લખો, એન્ટ્રી આપમેળે બનશે</h2>
     <button class="mic" id="mic" title="બોલો">🎙️</button>
@@ -96,7 +107,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 </div>
 
 <!-- LEDGER -->
-<div id="page-ledger">
+<div id="page-ledger" class="page">
   <div class="card">
     <select id="lm"></select>
     <div id="ledger"></div>
@@ -104,7 +115,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 </div>
 
 <!-- REPORTS -->
-<div id="page-rep">
+<div id="page-rep" class="page">
   <div class="card"><h2>ઓવરહેડ એન્જિન (કેરેટ વાઇઝ)</h2>
     <div class="res" id="r-out">₹0 પ્રતિ કેરેટ</div>
   </div>
@@ -115,8 +126,14 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
   <div class="card"><h2>આપવાનાં</h2><div id="rep-pay"></div></div>
 </div>
 
+<!-- HISTORY -->
+<div id="page-hist" class="page">
+  <div class="chips" id="hchips"></div>
+  <div id="hist"></div>
+</div>
+
 <!-- SETTINGS -->
-<div id="page-set">
+<div id="page-set" class="page">
   <div class="card"><h2>Gemini API Key (Google AI Studio)</h2>
     <input id="s-key" type="password" placeholder="AIza...">
     <div class="hint">Key ફોનમાં જ સેવ થાય છે. Google AI Studio માંથી ફ્રી key મળે છે. વગર key પણ મેન્યુઅલ એન્ટ્રી ચાલશે.</div>
@@ -143,6 +160,13 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 
 </div>
 <div class="tabs" id="tabs"></div>
+<button class="fab" id="fab" title="નવી એન્ટ્રી">＋</button>
+<div class="sheetbg" id="sheetbg"></div>
+<div class="sheet" id="sheet">
+  <button id="ch-voice">🎙️ બોલીને એન્ટ્રી</button>
+  <button id="ch-type">⌨️ લખીને એન્ટ્રી</button>
+  <button id="ch-photo">📷 ચિટ્ઠી/ફોટોથી એન્ટ્રી</button>
+</div>
 <div class="toast" id="toast"></div>
 <script>
 "use strict";
@@ -300,13 +324,15 @@ function showCalc(){
 document.getElementById("btn-save").addEventListener("click",()=>{
  const e={...CUR};FIELDS.forEach(([k,,t])=>{if(t==="num")e[k]=num(e[k]);if(t==="bool")e[k]=String(e[k])==="true";if(t==="select")e[k]=String(e[k])});
  if(!e.transaction_type){toast("પ્રકાર પસંદ કરો");return}
- e.id=Date.now();e.calc=calc(e);S.entries.push(e);save();syncEntry(e);renderAll();toast("સેવ થયું ✔");CUR=null;document.getElementById("editcard").style.display="none";document.getElementById("rawtext").value="";
+ e.id=Date.now();e.calc=calc(e);S.entries.push(e);save();syncEntry(e);renderAll();toast("સેવ થયું ✔");CUR=null;document.getElementById("editcard").style.display="none";document.getElementById("rawtext").value="";goTab("hist");
 });
 
 /* ---------- VOICE ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 if(SR){const r=new SR();r.lang="hi-IN";r.continuous=false;r.interimResults=false;
- document.getElementById("mic").addEventListener("click",()=>{try{r.start();document.getElementById("mic").classList.add("rec");document.getElementById("micstat").textContent="સાંભળી રહ્યો છું... બોલો"}catch(e){}});
+ const startMic=()=>{try{r.start();document.getElementById("mic").classList.add("rec");document.getElementById("micstat").textContent="સાંભળી રહ્યો છું... બોલો"}catch(e){}};
+ document.getElementById("mic").addEventListener("click",startMic);
+ window.__micStart=startMic;
  r.onresult=ev=>{const t=ev.results[0][0].transcript;document.getElementById("rawtext").value=t;document.getElementById("micstat").textContent="સાંભળ્યું";doParse()};
  r.onend=()=>document.getElementById("mic").classList.remove("rec");
  r.onerror=e=>{document.getElementById("mic").classList.remove("rec");document.getElementById("micstat").textContent="ફરી બોલો (માઇક પરમિશન આપવું)"}}
@@ -333,7 +359,7 @@ function renderHome(){
  let h="";
  if(dues.length)h+="<div class='hint'><b style='color:var(--gold2)'>લેવાના (આવવાના ક્રમે):</b><br>"+dues.slice(0,5).map(d=>d.p+" · "+rs(d.a)+" · "+d.d+" દિવસ").join("<br>")+"</div>";
  if(outs.length)h+="<div class='hint' style='margin-top:8px'><b style='color:var(--gold2)'>આપવાના:</b><br>"+outs.slice(0,5).map(d=>d.p+" · "+rs(d.a)+" · "+d.d+" દિવસ").join("<br>")+"</div>";
- if(!h)h="હજી એન્ટ્રી નથી. New ટેબમાંથી બોલીને શરૂ કરો.";
+ if(!h)h="હજી એન્ટ્રી નથી. નીચે + દબાવીને બોલીને શરૂ કરો.";
  document.getElementById("h-advice").innerHTML=h;
  // upad
  const bal={KV:0,VF:0,SHAILESH:0};
@@ -386,17 +412,75 @@ document.getElementById("btn-csv").addEventListener("click",()=>{
  const csv=rows.map(r=>r.map(x=>'"'+String(x).replace(/"/g,'""')+'"').join(",")).join("\n");
  const b=new Blob(["\ufeff"+csv],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="hisab.csv";a.click()});
 
+/* ---------- HISTORY ---------- */
+const HD={SALE:"SALE",LOT_ENTRY:"LOT",OUTSIDE_PURCHASE:"બહારની ખરીદ",UPAD:"UPAD",EXPENSE:"ખર્ચ",QUERY:"QUERY"};
+const HCLS={SALE:"b-sale",LOT_ENTRY:"b-lot",OUTSIDE_PURCHASE:"b-buy",UPAD:"b-upad",EXPENSE:"b-exp"};
+const HPER=[["today","આજ"],["d2","છેલ્લા 2 દિવસ"],["wk","છેલ્લું અઠવાડિયું"],["month","આ મહિનો"],["all","બધું"]];
+let hper="month";
+document.getElementById("hchips").innerHTML=HPER.map(([p,l])=>`<button data-p="${p}"${p==="month"?' class="on"':''}>${l}</button>`).join("");
+document.getElementById("hchips").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;hper=b.dataset.p;document.querySelectorAll("#hchips button").forEach(x=>x.classList.toggle("on",x===b));renderHist()});
+const dstr=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function histStart(){
+ const t=new Date();
+ if(hper==="today")return dstr(t);
+ if(hper==="d2"){const y=new Date(t);y.setDate(y.getDate()-1);return dstr(y)}
+ if(hper==="wk"){const y=new Date(t);y.setDate(y.getDate()-6);return dstr(y)}
+ if(hper==="month")return dstr(new Date(t.getFullYear(),t.getMonth(),1));
+ return null;
+}
+function calcLines(e){
+ const c=e.calc||{};const o=[];const L=(k,v,cls)=>{if(v)o.push([k,v,cls||""])};
+ if(e.transaction_type==="SALE"){L("બિલેબલ વજન",c.billableCts?cts(c.billableCts):"");L("ગ્રોસ બિલ",c.bill?rs(c.bill):"");L("દલાલી",c.dalaliAmt?rs(c.dalaliAmt):"");L("બટાવ",c.batavAmt?rs(c.batavAmt):"");L("આંગડિયા",c.angadia?rs(c.angadia):"");L("નેટ હાથમાં બેંક",c.netCash?rs(c.netCash):"","grn");L("પૈસા આવશે",c.dueIn?c.dueIn+" દિવસમાં":"")}
+ if(e.transaction_type==="LOT_ENTRY"){L("પીસ",c.pieces?c.pieces+" પીસ":"");L("VF/MFG દેય",c.vfPayable?rs(c.vfPayable):"","red");L("EMI ફંડ",c.emiFund?rs(c.emiFund):"","grn");L("પ્રોફિટ બફર",c.profitBuffer?rs(c.profitBuffer):"","grn");L("લેન્ડેડ @70",c.landed70?rs(c.landed70):"");L("બ્રેકઈવન @70",c.breakeven70?rs(c.breakeven70)+"/Ct":"")}
+ if(e.transaction_type==="OUTSIDE_PURCHASE")L("કુલ ખરીદી",c.amount?rs(c.amount):"","red");
+ if(e.transaction_type==="UPAD")L(e.direction==="upad"?"ઉપડ (બહાર)":"જમા (અંદર)",c.amount?rs(Math.abs(c.amount)):"");
+ if(e.transaction_type==="EXPENSE")L("ખર્ચ",c.amount?rs(c.amount):"","red");
+ return o;
+}
+function histRows(e){
+ const r=[];const add=(k,f)=>{const v=e[k];if(v===0||v==null||v===""||v===false)return;r.push([v,f?f(v):String(v)])};
+ add("party_name");add("broker_dalal");add("rough_carats",v=>cts(num(v))+" રફ");add("rough_rate_per_ct",v=>rs(num(v))+"/Ct");add("pieces_per_carat",v=>num(v)+" પીસ/Ct");add("polished_carats",v=>cts(num(v))+" પોલિશ");add("pieces",v=>num(v)+" પીસ");add("labour_rate_applied",v=>"લેબર ₹"+v);add("selling_rate_per_ct",v=>rs(num(v))+"/Ct");add("tip_weight_carats",v=>"ટિપ "+cts(num(v)));
+ if(String(e.ten_carat_cent_deduction)==="true")r.push(["10+ પર 2 સેન્ટ કપાયા","હા"]);
+ add("dalali_mode",v=>v+"% દલાલી");add("mudat_days",v=>v+" દિવસ મુદત");add("expected_payment_days",v=>"પૈસા "+v+" દિવસમાં");add("angadia_expenses",v=>rs(num(v)));add("batav_rate_pct",v=>v+"% બટાવ");add("partner_name");add("upad_amount",v=>rs(num(v)));add("expense_category");add("expense_amount",v=>rs(num(v)));
+ if(e.direction)r.push(["દિશા",e.direction==="upad"?"ઉપડ (બહાર)":"જમા (અંદર)"]);
+ return r;
+}
+function renderHist(){
+ const st=histStart();
+ const es=S.entries.filter(e=>!st||e.date>=st).sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+ let h="",ld="";
+ es.forEach(e=>{
+  if(e.date!==ld){ld=e.date;const dt=new Date(e.date+"T00:00:00");h+=`<div class="dhead">${dt.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short"})}</div>`}
+  const cls=HCLS[e.transaction_type]||"";
+  const tm=new Date(e.id).toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"});
+  const rows=histRows(e).map(([k,v])=>`<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  const cl2=calcLines(e).map(([k,v,cc])=>`<div class="row"><span class="k">${k}</span><span class="v ${cc}">${v}</span></div>`).join("");
+  h+=`<div class="ecard"><div class="tt"><span class="badge ${cls}">${HD[e.transaction_type]||e.transaction_type}</span><span class="tm">${tm}</span></div>
+  <div style="font-weight:700;margin-bottom:4px">${e.party_name||e.partner_name||e.expense_category||""}</div>
+  ${rows}${cl2?`<div class="hint" style="margin:8px 0 2px">ગણતરી</div>${cl2}`:""}</div>`;
+ });
+ document.getElementById("hist").innerHTML=h||'<div class="hint">કોઈ એન્ટ્રી નથી. નીચે + દબાવીને એન્ટ્રી શરૂ કરો.</div>';
+}
 /* ---------- TABS ---------- */
-const TABS=[["home","🏠","હોમ"],["new","🎙️","નવી"],["ledger","📖","લેજર"],["rep","📊","રિપોર્ટ"],["set","⚙️","સેટિંગ"]];
+const TABS=[["home","🏠","હોમ"],["hist","📖","હિસ્ટ્રી"],["set","⚙️","સેટિંગ"]];
 document.getElementById("tabs").innerHTML=TABS.map(([id,ic,l])=>`<button data-t="${id}"${id==="home"?' class="on"':''}><span class="ic">${ic}</span>${l}</button>`).join("");
-document.getElementById("tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
- document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
- document.querySelectorAll(".wrap>div[id^=page]").forEach(p=>p.classList.remove("on"));
- document.getElementById("page-"+b.dataset.t).classList.add("on");
- if(b.dataset.t==="set")fillSettings();
- if(b.dataset.t==="rep")renderReports();
- if(b.dataset.t==="home")renderHome();
-});
+function goTab(id){
+ document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.t===id));
+ document.querySelectorAll(".wrap>div[id^=page]").forEach(p=>p.classList.toggle("on",p.id==="page-"+id));
+ if(id==="set")fillSettings();
+ if(id==="hist")renderHist();
+ if(id==="home")renderHome();
+}
+document.getElementById("tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;goTab(b.dataset.t)});
+
+/* ---------- FAB + ENTRY CHOOSER ---------- */
+const sheetEl=document.getElementById("sheet"),bgEl=document.getElementById("sheetbg");
+document.getElementById("fab").addEventListener("click",()=>{sheetEl.style.display="block";bgEl.style.display="block"});
+const closeSheet=()=>{sheetEl.style.display="none";bgEl.style.display="none"};
+bgEl.addEventListener("click",closeSheet);
+document.getElementById("ch-voice").addEventListener("click",()=>{closeSheet();goTab("new");if(window.__micStart)window.__micStart()});
+document.getElementById("ch-type").addEventListener("click",()=>{closeSheet();goTab("new");const t=document.getElementById("rawtext");t.scrollIntoView({behavior:"smooth"});t.focus()});
+document.getElementById("ch-photo").addEventListener("click",()=>{closeSheet();doPhoto()});
 document.getElementById("btn-parse").addEventListener("click",doParse);
 document.getElementById("btn-photo").addEventListener("click",doPhoto);
 document.getElementById("lm").addEventListener("change",renderLedger);
