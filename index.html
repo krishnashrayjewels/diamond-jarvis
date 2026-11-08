@@ -265,7 +265,7 @@ function monthOverheadRate(){
 /* ---------- AI PARSE ---------- */
 async function gemini(parts){
  const key=(S.settings.key||"").trim();if(!key){toast("પહેલા Settings માં Gemini key નાખો");return null}
- const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts}],systemInstruction:{parts:[{text:SYS}]},generationConfig:{temperature:0.1,responseMimeType:"application/json"}})});
+ const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts}],systemInstruction:{parts:[{text:SYS}]},generationConfig:{temperature:0.1,responseMimeType:"application/json"}})});
  if(!r.ok){let m="AI એરર: "+r.status;try{const er=await r.json();if(er&&er.error&&er.error.message)m+=" - "+er.error.message}catch(e){}toast(m);return null}
  const j=await r.json();
  try{return JSON.parse(j.candidates[0].content.parts[0].text)}catch(err){toast("AI જવાબ વાંચી ના શક્યો");return null}
