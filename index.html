@@ -291,7 +291,7 @@ function doPhoto(){
 function syncEntry(e){
  const url=S.settings.sync;if(!url)return;
  const c=e.calc||{};
- const p={date:e.date,type:e.transaction_type,subtype:e.subtype||"",party:e.party_name||e.partner_name||"",dalal:e.broker_dalal||"",carats:c.billableCts||num(e.polished_carats)||num(e.rough_carats)||"",rate:num(e.selling_rate_per_ct)||num(e.rough_rate_per_ct)||"",dalali:num(e.dalali_mode)||"",terms:num(e.mudat_days)||"",quality:e.quality||"",amount:num(e.amount)||num(e.upad_amount)||num(e.expense_amount)||"",direction:e.direction||"",partner:e.partner_name||"",note:e.expense_category||""};
+ const p={date:e.date,type:e.transaction_type,subtype:e.subtype||"",party:e.party_name||e.partner_name||"",dalal:e.broker_dalal||"",carats:c.billableCts||num(e.polished_carats)||num(e.rough_carats)||"",rate:num(e.selling_rate_per_ct)||num(e.rough_rate_per_ct)||"",dalali:num(e.dalali_mode)||"",terms:num(e.mudat_days)||"",quality:e.quality||"",amount:num(e.amount)||num(e.upad_amount)||num(e.expense_amount)||"",direction:e.direction||"",partner:e.partner_name||"",note:e.expense_category||"",id:e.id};
  fetch(url,{method:"POST",mode:"no-cors",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)}).then(()=>toast("Drive ma bhi save ✔")).catch(()=>toast("Drive sync nathi thayu, entry app ma to save che"));
 }
 
