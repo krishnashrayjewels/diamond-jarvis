@@ -60,6 +60,7 @@ label{font-size:12px;color:var(--mut);display:block;margin-top:10px}
 .ecard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
 .ecard .tt{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .ecard .tm{color:var(--mut);font-size:11px}
+.delbtn{background:none;border:none;font-size:14px;padding:0 2px 0 8px;cursor:pointer;opacity:.55}
 </style>
 </head>
 <body>
@@ -294,6 +295,11 @@ function syncEntry(e){
  fetch(url,{method:"POST",mode:"no-cors",redirect:"follow",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)}).then(()=>toast("Drive ma bhi save ✔")).catch(()=>toast("Drive sync nathi thayu, entry app ma to save che"));
 }
 
+function syncDelete(e){
+ const url=S.settings.sync;if(!url)return;
+ fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({type:"DELETE",id:e.id,date:e.date})}).then(()=>toast("Sheet માંથી પણ કાઢ્યું ✔")).catch(()=>{});
+}
+
 /* ---------- EDITOR ---------- */
 let CUR=null;
 function openEditor(d){
@@ -328,16 +334,32 @@ document.getElementById("btn-save").addEventListener("click",()=>{
  e.id=Date.now();e.calc=calc(e);S.entries.push(e);save();syncEntry(e);renderAll();toast("સેવ થયું ✔");CUR=null;document.getElementById("editcard").style.display="none";document.getElementById("rawtext").value="";goTab("hist");
 });
 
-/* ---------- VOICE ---------- */
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(SR){const r=new SR();r.lang="hi-IN";r.continuous=false;r.interimResults=false;
- const startMic=()=>{try{r.start();document.getElementById("mic").classList.add("rec");document.getElementById("micstat").textContent="સાંભળી રહ્યો છું... બોલો"}catch(e){}};
- document.getElementById("mic").addEventListener("click",startMic);
- window.__micStart=startMic;
- r.onresult=ev=>{const t=ev.results[0][0].transcript;document.getElementById("rawtext").value=t;document.getElementById("micstat").textContent="સાંભળ્યું";doParse()};
- r.onend=()=>document.getElementById("mic").classList.remove("rec");
- r.onerror=e=>{document.getElementById("mic").classList.remove("rec");document.getElementById("micstat").textContent="ફરી બોલો (માઇક પરમિશન આપવું)"}}
-else document.getElementById("mic").style.display="none";
+/* ---------- VOICE (Gemini listens: Gujarati/Hindi both) ---------- */
+let micRec=null,micChunks=[],micOn=false;
+async function startMic(){
+ if(micOn){stopMic();return}
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true});
+  micRec=new MediaRecorder(st);micChunks=[];
+  micRec.ondataavailable=ev=>{if(ev.data&&ev.data.size)micChunks.push(ev.data)};
+  micRec.onstop=onMicStop;
+  micRec.start();micOn=true;
+  document.getElementById("mic").classList.add("rec");
+  document.getElementById("micstat").textContent="સાંભળી રહ્યો છું... બોલો, પૂરું થાય તો ફરી દબાવો";
+ }catch(e){document.getElementById("micstat").textContent="માઇક પરમિશન આપવી (browser settings)"}}
+function stopMic(){micOn=false;try{micRec.stop()}catch(e){}
+ document.getElementById("mic").classList.remove("rec");
+ document.getElementById("micstat").textContent="સમજી રહ્યો છું... (Gemini)"}
+async function onMicStop(){
+ if(!micChunks.length){document.getElementById("micstat").textContent="કંઈ રેકોર્ડ થયું નથી, ફરી બોલો";return}
+ const blob=new Blob(micChunks,{type:(micRec&&micRec.mimeType)||"audio/webm"});
+ if(blob.size<2000){document.getElementById("micstat").textContent="બહુ ટૂંકું સામપલે છે, ફરી બોલો";return}
+ document.getElementById("micstat").textContent="Gemini સાંભળી રહ્યો છે...";
+ const b64=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(",")[1]);fr.readAsDataURL(blob)});
+ const d=await gemini([{text:"This is a spoken diamond-trade entry recorded on a phone, in Gujarati, Hindi or Hinglish (numbers may be spoken as words). First understand the audio exactly, then extract it into the JSON schema. Carat, pees, rate, mudat, dalali, party name sab dhyan se."},{inline_data:{mime_type:blob.type||"audio/webm",data:b64}}]);
+ if(d){openEditor(d);document.getElementById("micstat").textContent="સમજાયું ✔ ચેક કરીને સેવ કરો"}
+ else document.getElementById("micstat").textContent="સમજાયું નથી, ફરી બોલો (કે લખીને/ચિટ્ઠી ફોટો)"}
+document.getElementById("mic").addEventListener("click",startMic);
+window.__micStart=startMic;
 
 /* ---------- DASHBOARD / REPORTS ---------- */
 function renderAll(){renderHome();renderMonths();renderLedger();renderReports()}
@@ -466,12 +488,13 @@ function renderHist(){
   const tm=new Date(e.id).toLocaleTimeString("en-IN",{hour:"numeric",minute:"2-digit"});
   const rows=histRows(e).map(([k,v])=>`<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
   const cl2=calcLines(e).map(([k,v,cc])=>`<div class="row"><span class="k">${k}</span><span class="v ${cc}">${v}</span></div>`).join("");
-  h+=`<div class="ecard"><div class="tt"><span class="badge ${cls}">${HD[e.transaction_type]||e.transaction_type}</span><span class="tm">${tm}</span></div>
+  h+=`<div class="ecard"><div class="tt"><span class="badge ${cls}">${HD[e.transaction_type]||e.transaction_type}</span><span class="tm">${tm}</span><button class="delbtn" data-id="${e.id}" title="ડિલીટ">🗑</button></div>
   <div style="font-weight:700;margin-bottom:4px">${e.party_name||e.partner_name||e.expense_category||""}</div>
   ${rows}${cl2?`<div class="hint" style="margin:8px 0 2px">ગણતરી</div>${cl2}`:""}</div>`;
  });
  document.getElementById("hist").innerHTML=h||'<div class="hint">કોઈ એન્ટ્રી નથી. નીચે + દબાવીને એન્ટ્રી શરૂ કરો.</div>';
 }
+document.getElementById("hist").addEventListener("click",ev=>{const b=ev.target.closest("button.delbtn");if(!b)return;const id=+b.dataset.id;const e=S.entries.find(x=>x.id===id);if(!e)return;if(!confirm("આ એન્ટ્રી કાઢી નાખવી છે? Sheet માંથી પણ કાઢી નખાશે."))return;S.entries=S.entries.filter(x=>x.id!==id);save();syncDelete(e);renderAll();toast("ડિલીટ થયું ✔")});
 /* ---------- TABS ---------- */
 const TABS=[["home","🏠","હોમ"],["hist","📖","હિસ્ટ્રી"],["set","⚙️","સેટિંગ"]];
 document.getElementById("tabs").innerHTML=TABS.map(([id,ic,l])=>`<button data-t="${id}"${id==="home"?' class="on"':''}><span class="ic">${ic}</span>${l}</button>`).join("");
