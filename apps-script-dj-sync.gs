@@ -114,24 +114,26 @@ function quality_(sh,headerRow,col,q){
 
 /* ---------- write one entry ---------- */
 function writeEntry_(sh,p){
+  const ss=sh.getParent();
   const a=anchors_(sh);
   const n=x=>{const v=parseFloat(x);return isNaN(v)?null:v;};
   const t=p.type;
   const q=String(p.quality||"").trim();
-  const d=toDate_(p.date);
+  const d=toDate_(ss,p.date);
+  const putD=col=>{sh.getRange(r_,col).setValue(d);sh.getRange(r_,col).setNumberFormat("dd/mm/yyyy");};
   const txt=(col,v)=>{const s=String(v==null?"":v).trim();if(s)sh.getRange(r_,col).setValue(s);};
   let r_;
   const put=(col,v)=>{sh.getRange(r_,col).setValue(v);};
   if(t==="SALE"){
     r_=nextRow_(sh,"A",a.sellDataStart,a.sellTotal);
-    put(1,d);put(2,n(p.carats));put(3,n(p.rate));put(4,n(p.terms));
+    putD(1);put(2,n(p.carats));put(3,n(p.rate));put(4,n(p.terms));
     txt(5,p.dalali);txt(8,p.dalal);txt(9,p.party);
     quality_(sh,a.sellHeader,10,q);if(q)put(10,q);
     return "SELL row "+r_;
   }
   if(t==="LOT_ENTRY"||t==="OUTSIDE_PURCHASE"){
     r_=nextRow_(sh,"A",a.purDataStart,a.purTotal);
-    put(1,d);put(2,n(p.carats));put(3,n(p.rate));put(4,n(p.terms));
+    putD(1);put(2,n(p.carats));put(3,n(p.rate));put(4,n(p.terms));
     txt(7,p.dalal);txt(8,p.party);
     quality_(sh,a.purHeader,9,q);if(q)put(9,q);
     return "PURCHASE row "+r_;
@@ -139,28 +141,28 @@ function writeEntry_(sh,p){
   if(t==="UPAD"){
     if(p.direction==="jama"){
       r_=nextRow_(sh,"A",a.aavakDataStart,a.aavakTotal);
-      put(1,d);put(2,n(p.amount));txt(4,p.partner||p.party);
+      putD(1);put(2,n(p.amount));txt(4,p.partner||p.party);
       return "AAVAK (jama) row "+r_;
     }
     r_=nextRow_(sh,"H",a.aavakDataStart,a.aavakTotal);
-    put(8,d);put(9,n(p.amount));txt(11,p.partner||p.party);txt(14,p.partner);
+    putD(8);put(9,n(p.amount));txt(11,p.partner||p.party);txt(14,p.partner);
     return "JAVAK UPAD row "+r_;
   }
   if(t==="EXPENSE"){
     r_=nextRow_(sh,"H",a.aavakDataStart,a.aavakTotal);
-    put(8,d);put(9,n(p.amount));txt(11,p.note||p.party);
+    putD(8);put(9,n(p.amount));txt(11,p.note||p.party);
     return "JAVAK (kharcha) row "+r_;
   }
   if(t==="AAVAK"){
     r_=nextRow_(sh,"A",a.aavakDataStart,a.aavakTotal);
-    put(1,d);
+    putD(1);
     put(p.subtype==="INVESTMENT"?7:(p.subtype==="UCHHINA"?6:2),n(p.amount));
     txt(4,p.party);txt(5,p.note);
     return "AAVAK row "+r_;
   }
   if(t==="JAVAK"){
     r_=nextRow_(sh,"H",a.aavakDataStart,a.aavakTotal);
-    put(8,d);
+    putD(8);
     put(p.subtype==="UCHHINA"?13:9,n(p.amount));
     txt(11,p.party);txt(12,p.note);
     return "JAVAK row "+r_;
@@ -168,10 +170,20 @@ function writeEntry_(sh,p){
   return "unknown type "+t;
 }
 
-function toDate_(s){
+function toDate_(ss,s){
   const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
-  return new Date();
+  if(!m)return new Date();
+  const y=+m[1],mo=+m[2],dy=+m[3];
+  const tz=ss.getSpreadsheetTimeZone();
+  let d=new Date(Date.UTC(y,mo-1,dy,12,0,0));
+  const want=y+"-"+("0"+mo).slice(-2)+"-"+("0"+dy).slice(-2);
+  for(let k=0;k<3;k++){
+    const wall=Utilities.formatDate(d,tz,"yyyy-MM-dd");
+    if(wall===want)break;
+    const wt=Date.UTC(+wall.slice(0,4),+wall.slice(5,7)-1,+wall.slice(8,10),12,0,0);
+    d=new Date(d.getTime()+(Date.UTC(y,mo-1,dy,12,0,0)-wt));
+  }
+  return d;
 }
 
 /* ---------- blank structure (rare fallback) ---------- */
